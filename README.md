@@ -75,6 +75,15 @@ python scripts/run_dev.py --host 127.0.0.1 --port 8765 --no-browser
 python scripts/run_dev.py --self-check
 ```
 
+### 方式三：安装 Android 安卓通用版（支持导入电脑端数据）
+1. 前往本仓库右侧的 **[Releases](https://github.com/wwesun2000/CineVault-Studio/releases)** 页面，下载 **`CineVaultStudio-Android-Universal.apk`**（支持 Android 7.0+ 全架构通用）。
+2. **导入电脑端数据**：
+   - **方式 A（推荐，含封面）**：在 Windows 端点击「📦 同步包 (.cvpack)」导出 `cinevault_sync.cvpack` 并发送到手机。在安卓 App 中点击底部 **「📥 导入」** 选择该 `.cvpack` 文件，即可一键导入全部元数据、半星评分、标签与本地封面图。
+   - **方式 B（直接导入数据库）**：也支持直接选择从电脑端拷贝的 `cinevault_library.db` 文件进行数据导入。
+3. **本地目录哈希对齐与播放**：
+   - 点击底部 **「📂 扫描」** 选择手机或 SD 卡里的视频文件夹，安卓端内置与电脑端完全一致的 **BLAKE2b-128 三段 64KB 极速复合哈希 (`cvh1_blake2b_3x64k`)**，自动将导入的影片记录对齐到手机本地路径。
+   - 点击 **「▶ VLC 播放」** 可直接唤起 **VLC for Android**（或系统播放器）播放本地/SMB 视频，也支持内置播放器播放。
+
 ---
 
 ## 🤖 AI 补全与标签校对工作流 (AI Enrichment Workflow)
@@ -116,7 +125,8 @@ scripts\build_windows_exe.bat
 
 ```text
 CineVault-Studio/
-├── .github/workflows/release.yml   # GitHub Actions CI & Windows Release 自动编译打包
+├── .github/workflows/release.yml   # GitHub Actions CI & Windows/Android 自动编译打包
+├── android/                        # Android 通用版原生工程 (Kotlin + WebView + SQLite + BLAKE2b)
 ├── AI_ENRICHMENT_GUIDE.md          # CLI AI 模型元数据与标签校对完整规范指南
 ├── ARCHITECTURE.md                 # 核心架构与不变量设计文档
 ├── INTERFACE_CONTRACTS.md          # REST API、SQLite、MCP 与 .cvpack 接口契约

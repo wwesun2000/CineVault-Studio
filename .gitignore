@@ -20,6 +20,13 @@ build/
 *.spec
 *.zip
 
+# Android build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/index.html
+
 # Internal agent handoff files
 .antigravity/
 HYDROGEN_TASKS.md

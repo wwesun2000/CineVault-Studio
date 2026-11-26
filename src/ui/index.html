@@ -759,9 +759,9 @@
   <nav class="mobile-bottom-nav">
     <button class="btn" onclick="setCategoryMode('all')">&#x1F3E0; 全部</button>
     <button class="btn" onclick="setCategoryMode('western_adult')">&#x1F525; 欧美</button>
-    <button class="btn" onclick="setCategoryMode('japanese_jav')">&#x1F338; 日本AV</button>
-    <button class="btn" onclick="setCategoryMode('mainstream')">&#x1F37F; 院线</button>
-    <button class="btn" onclick="openModal('ai-modal')">&#x2728; AI新厂牌</button>
+    <button class="btn" onclick="setCategoryMode('japanese_jav')">&#x1F338; AV</button>
+    <button class="btn" onclick="openModal('sync-modal')">&#x1F4E5; 导入</button>
+    <button class="btn" onclick="simulateRefreshScan()">&#x1F4C2; 扫描</button>
   </nav>
 
   <!-- Modal 1: Dual-Mode AI Enrichment & New Studio Registration -->
@@ -814,9 +814,9 @@
         Windows 端可将整理好的欧美成人、日本AV番号与常规电影库分类、半星评分、新收录厂牌词库与封面打包导出为 <code>.cvpack</code>。安卓端导入时以文件的 <code>cvh1_blake2b_3x64k</code> 复合西哈值为准自动映射手机或 NAS 路径。
       </p>
       <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <button class="btn btn-primary" onclick="exportCvpackBundle()">&#x1F4E4; 导出 .cvpack 同步包</button>
+        <button class="btn btn-primary" id="btn-export-cvpack" onclick="exportCvpackBundle()">&#x1F4E4; 导出 .cvpack 同步包</button>
         <input type="text" id="cvpack-import-path" placeholder="输入本地 .cvpack 文件路径进行导入校验..." style="flex:1; min-width:200px; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.82rem;" />
-        <button class="btn" onclick="importCvpackBundle()">&#x1F4E5; 导入并哈希对齐</button>
+        <button class="btn btn-primary" onclick="importCvpackBundle()">&#x1F4E5; 导入数据 (.cvpack / .db)</button>
       </div>
       <textarea class="code-area" id="sync-textarea" readonly></textarea>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -924,7 +924,8 @@
   </div>
 
   <script>
-    const IS_LOCAL_SERVER = window.location.protocol.startsWith("http");
+    const IS_ANDROID_APP = Boolean(window.CineVaultAndroid);
+    const IS_LOCAL_SERVER = !IS_ANDROID_APP && window.location.protocol.startsWith("http");
     let currentLang = "zh";
     let currentTheme = "obsidian";
     let activeCategoryMode = "all"; // 'all', 'western_adult', 'japanese_jav', 'mainstream'
@@ -1417,6 +1418,26 @@
     }
 
     async function loadBackendLibrary() {
+      if (IS_ANDROID_APP) {
+        try {
+          const raw = window.CineVaultAndroid.getLibraryJson();
+          const arr = JSON.parse(raw || "[]");
+          if (Array.isArray(arr) && arr.length > 0) {
+            MEDIA_ITEMS = arr;
+          }
+          const btnExport = document.getElementById("btn-export-cvpack");
+          if (btnExport) btnExport.style.display = "none";
+          const pathInput = document.getElementById("cvpack-import-path");
+          if (pathInput) {
+            pathInput.placeholder = "安卓端点击右侧「导入数据」直接选择手机里的 .cvpack 或 cinevault_library.db";
+            pathInput.readOnly = true;
+          }
+          renderLibrary();
+        } catch (err) {
+          console.warn("Android DB load failed:", err);
+        }
+        return;
+      }
       if (!IS_LOCAL_SERVER) return;
       try {
         const [libData, cfgData] = await Promise.all([apiGet("/api/library"), apiGet("/api/config")]);
@@ -1457,6 +1478,10 @@
       item.rating = num;
       item.rating_half_steps = Math.round(num * 2);
       document.getElementById(`star-lbl-${itemId}`).textContent = formatStars(num);
+      if (IS_ANDROID_APP) {
+        window.CineVaultAndroid.updateRating(itemId, num);
+        return;
+      }
       if (IS_LOCAL_SERVER) {
         await apiPost("/api/rate", { item_id: itemId, rating: num });
       }
@@ -1467,7 +1492,9 @@
       const input = document.getElementById(`kw-input-${itemId}`);
       if (!item || !input) return;
       item.user_keywords = input.value.split(",").map(s => s.trim()).filter(Boolean);
-      if (IS_LOCAL_SERVER) {
+      if (IS_ANDROID_APP) {
+        window.CineVaultAndroid.updateKeywords(itemId, JSON.stringify(item.user_keywords));
+      } else if (IS_LOCAL_SERVER) {
         await apiPost("/api/keywords", { item_id: itemId, keywords: item.user_keywords });
       }
       renderLibrary();
@@ -1475,6 +1502,15 @@
 
     async function launchVlc(itemId) {
       const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
+      if (!item) return;
+      if (IS_ANDROID_APP) {
+        window.CineVaultAndroid.playInVlc(
+          item.file_path || "",
+          item.title || item.file_name || "",
+          Number(item.last_played_pos_sec || 0)
+        );
+        return;
+      }
       const vlcExe = document.getElementById("player-select").value;
       if (vlcExe === "builtin") {
         launchBuiltinPlayer(itemId);
@@ -1511,6 +1547,18 @@
     function launchBuiltinPlayer(itemId) {
       const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
       if (!item) return;
+      if (IS_ANDROID_APP) {
+        if (item.file_path && (item.file_path.startsWith("content://") || item.file_path.startsWith("http"))) {
+          const videoEl = document.getElementById("builtin-video");
+          videoEl.src = item.file_path;
+          document.getElementById("player-modal-title").textContent = `🎬 ${item.jav_code ? "[" + item.jav_code + "] " : ""}${item.title || item.file_name}`;
+          document.getElementById("player-modal-meta").textContent = `Android 本地播放 | Fast Hash: ${item.fast_hash}`;
+          openModal("player-modal");
+        } else {
+          window.CineVaultAndroid.playInVlc(item.file_path || "", item.title || item.file_name || "", Number(item.last_played_pos_sec || 0));
+        }
+        return;
+      }
       if (IS_LOCAL_SERVER) {
         const videoEl = document.getElementById("builtin-video");
         videoEl.src = `/api/stream/${encodeURIComponent(item.item_id)}`;
@@ -1538,6 +1586,10 @@
     }
 
     async function simulateRefreshScan() {
+      if (IS_ANDROID_APP) {
+        window.CineVaultAndroid.pickScanFolder();
+        return;
+      }
       const modalEl = document.getElementById("refresh-modal");
       const phaseEl = document.getElementById("refresh-phase-text");
       const barEl = document.getElementById("refresh-progress-bar");
@@ -1798,6 +1850,11 @@
     }
 
     async function importCvpackBundle() {
+      if (IS_ANDROID_APP) {
+        document.getElementById("sync-textarea").value = "正在打开手机文件选择器，请选择 .cvpack 同步包或 cinevault_library.db 数据库文件...";
+        window.CineVaultAndroid.pickImportFile();
+        return;
+      }
       if (!IS_LOCAL_SERVER) {
         alert("离线预览模式不支持真实导入，请运行 scripts/run_dev.py 启动本地服务。");
         return;
@@ -1813,6 +1870,33 @@
         await loadBackendLibrary();
       }
     }
+
+    window.onAndroidImportComplete = async function(rawJson) {
+      try {
+        const res = JSON.parse(rawJson || "{}");
+        document.getElementById("sync-textarea").value = JSON.stringify(res, null, 2);
+        openModal("sync-modal");
+        if (res.status === "ok") {
+          await loadBackendLibrary();
+        }
+      } catch (e) {
+        alert("导入回调解析失败: " + e);
+      }
+    };
+
+    window.onAndroidScanComplete = async function(rawJson) {
+      try {
+        const res = JSON.parse(rawJson || "{}");
+        if (res.status === "ok") {
+          await loadBackendLibrary();
+          alert(`✓ 安卓本地目录扫描完成！\n共扫描视频: ${res.scanned_count || 0}\n哈希匹配对齐: ${res.matched_by_hash || 0}\n文件名大小对齐: ${res.matched_by_size_and_name || 0}\n新增本地影片: ${res.added_new || 0}`);
+        } else {
+          alert("⚠ 扫描失败: " + (res.message || "未知错误"));
+        }
+      } catch (e) {
+        alert("扫描回调解析失败: " + e);
+      }
+    };
 
     function renderSettingsRoots() {
       const list = document.getElementById("settings-roots-list");

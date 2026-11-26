@@ -1,4 +1,4 @@
-name: CI & Windows Release Build
+name: CI & Cross-Platform Release Build (Windows + Android)
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Optional tag name to publish a GitHub Release (e.g. v1.0.0)"
+        description: "Optional tag name to publish a GitHub Release (e.g. v1.1.0)"
         required: false
         default: ""
 
@@ -80,25 +80,83 @@ jobs:
             dist/CineVaultStudio.exe
             dist/CineVaultStudio_Portable.zip
 
+  build-android:
+    name: Build Android Universal APK
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Embed latest Web UI into Android assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp src/ui/index.html android/app/src/main/assets/index.html
+
+      - name: Build Universal Release APK
+        run: gradle -p android assembleRelease --no-daemon
+
+      - name: Stage APK artifact
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/CineVaultStudio-Android-Universal.apk
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CineVaultStudio-Android-Universal
+          path: dist/CineVaultStudio-Android-Universal.apk
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-windows, build-android]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: CineVaultStudio-Windows-Portable
+          path: release_assets
+
+      - name: Download Android APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CineVaultStudio-Android-Universal
+          path: release_assets
+
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_tag }}
           name: CineVault Studio ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_tag }}
           generate_release_notes: true
           body: |
-            ## CineVault Studio (影库枢机) Windows 绿色便携版
+            ## CineVault Studio (影库枢机) — Windows 便携版 & 安卓通用版
 
-            ### 下载与使用说明
-            - **`CineVaultStudio_Portable.zip`**（推荐）：解压到任意文件夹，双击 `CineVaultStudio.exe` 即可使用（含 `AI_ENRICHMENT_GUIDE.md` 指南与开源协议）。
-            - **`CineVaultStudio.exe`**：单文件独立可执行程序。
+            ### 下载与安装说明
+            - **Windows 绿色便携版**：下载 `CineVaultStudio_Portable.zip` 解压后双击 `CineVaultStudio.exe` 即可运行（或直接下载单文件 `CineVaultStudio.exe`）。
+            - **Android 通用版 (APK)**：下载 `CineVaultStudio-Android-Universal.apk` 在安卓 7.0+ 手机或平板上安装即可使用（兼容 `arm64-v8a` / `armeabi-v7a` / `x86_64`）。
 
-            ### 核心功能亮点
-            - 三轨本地/NAS 影库管理（欧美成人 / 日本 AV 番号 / 常规院线），O(1) 极速复合哈希移动重定位
-            - 多维线索解析（文件名 + 系列目录 + 女优目录 + 视频时长 `duration_sec`）与系列必有标签自动补全
-            - 双模式 AI 元数据与标签校对（支持 CLI 就地编辑 `AI_KEYWORD_DB.md` 及 `tags_only` 标签专项校对模式，空标签不覆盖已有标签）
-            - 在线封面本地持久化（`.cinevault_covers/`）、一键前台唤起 VLC 播放、跨平台 `.cvpack` 同步包导出与导入
+            ### 安卓端数据导入与使用说明
+            1. 在电脑端点击「📦 同步包 (.cvpack)」导出 `cinevault_sync.cvpack`（推荐，内含全部本地封面图），或直接拷贝电脑端的 `cinevault_library.db`。
+            2. 在安卓端点击底部栏 **「📥 导入」**，选择手机里的 `.cvpack` 或 `.db` 文件，即可导入全部片名、厂牌、女优、标签、半星评分与封面。
+            3. 点击底部栏 **「📂 扫描」** 选择手机/SD 卡视频目录，安卓端会使用与电脑端完全一致的 `cvh1_blake2b_3x64k` 极速三段哈希自动对齐本地视频路径，点击即可直接唤起 **VLC for Android** 或内置播放器播放！
           files: |
-            dist/CineVaultStudio_Portable.zip
-            dist/CineVaultStudio.exe
+            release_assets/CineVaultStudio_Portable.zip
+            release_assets/CineVaultStudio.exe
+            release_assets/CineVaultStudio-Android-Universal.apk
