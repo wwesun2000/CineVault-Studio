@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="obsidian">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CineVault Studio — Western Adult, Japanese JAV &amp; Mainstream Cinema Organizer</title>
+  <style>
+    :root[data-theme="obsidian"] {
+      --bg-primary: #0D0F14;
+      --bg-secondary: #151922;
+      --bg-card: #1A1F2B;
+      --bg-elevated: #232A3B;
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --accent: #F59E0B;
+      --accent-hover: #D97706;
+      --accent-soft: rgba(245, 158, 11, 0.14);
+      --jav-accent: #EC4899;
+      --jav-soft: rgba(236, 72, 153, 0.15);
+      --cinema-accent: #38BDF8;
+      --cinema-soft: rgba(56, 189, 248, 0.14);
+      --border: rgba(255, 255, 255, 0.09);
+      --badge-added: #10B981;
+      --badge-moved: #3B82F6;
+      --badge-missing: #EF4444;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    :root[data-theme="nordic"] {
+      --bg-primary: #F8F7F4;
+      --bg-secondary: #EFECE6;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #F3F1EC;
+      --text-primary: #1E293B;
+      --text-secondary: #64748B;
+      --accent: #4F46E5;
+      --accent-hover: #4338CA;
+      --accent-soft: rgba(79, 70, 229, 0.12);
+      --jav-accent: #DB2777;
+      --jav-soft: rgba(219, 39, 119, 0.12);
+      --cinema-accent: #0284C7;
+      --cinema-soft: rgba(2, 132, 199, 0.12);
+      --border: rgba(15, 23, 42, 0.10);
+      --badge-added: #059669;
+      --badge-moved: #2563EB;
+      --badge-missing: #DC2626;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    body.privacy-blur .poster-art,
+    body.privacy-blur .card-title,
+    body.privacy-blur .performer-chip {
+      filter: blur(12px);
+      transition: filter 0.2s ease;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    /* Tri-Library Partition Switcher */
+    .library-switcher {
+      display: inline-flex;
+      background: var(--bg-primary);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .lib-tab {
+      padding: 6px 11px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .lib-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 320px;
+      min-width: 180px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 13px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.86rem;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    /* Layout Container */
+    .workspace {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      flex: 1;
+      min-height: calc(100vh - 65px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .side-section-title {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding: 0 8px;
+    }
+
+    .side-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .side-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+    }
+
+    .side-item:hover, .side-item.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--badge-added);
+      display: inline-block;
+    }
+
+    /* Main Content Area */
+    .main-area {
+      padding: 16px 22px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Multi-Faceted Category Search Panel (Genre Tag / Studio / Performer / Title / Star Rating) */
+    .faceted-search-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .facet-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .facet-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .facet-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.77rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .hash-summary {
+      display: flex;
+      gap: 8px;
+      font-size: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .hash-pill {
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-weight: 600;
+      background: var(--bg-elevated);
+    }
+
+    /* Media Grid */
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+      gap: 16px;
+    }
+
+    .media-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .media-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+    }
+
+    .poster-wrap {
+      position: relative;
+      height: 165px;
+      overflow: hidden;
+      background: #111520;
+    }
+
+    .poster-art {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 12px;
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      position: relative;
+    }
+
+    .studio-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(4px);
+      color: #FBBF24;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .studio-badge.unknown-studio {
+      background: rgba(220, 38, 38, 0.88);
+      color: #fff;
+      border: 1px dashed #FDE047;
+    }
+
+    .category-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+    .cat-adult { background: rgba(245, 158, 11, 0.9); color: #111; }
+    .cat-jav { background: rgba(236, 72, 153, 0.9); color: #fff; }
+    .cat-mainstream { background: rgba(56, 189, 248, 0.9); color: #082f49; }
+
+    .cover-source-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      background: rgba(15, 23, 42, 0.78);
+      color: #E2E8F0;
+    }
+
+    .diff-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .diff-added { background: var(--badge-added); }
+    .diff-moved_or_renamed { background: var(--badge-moved); }
+    .diff-missing { background: var(--badge-missing); }
+
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 0.94rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .jav-code-pill {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--jav-soft);
+      color: var(--jav-accent);
+      margin-right: 4px;
+    }
+
+    .card-date {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .performer-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .performer-chip {
+      font-size: 0.73rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .performer-chip.jav-actress {
+      background: var(--jav-soft);
+      color: var(--jav-accent);
+    }
+
+    .performer-chip.cinema-cast {
+      background: var(--cinema-soft);
+      color: var(--cinema-accent);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag-pill {
+      font-size: 0.69rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    /* Interactive Half-Star Rating Widget (0.5 to 5.0) */
+    .rating-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+
+    .half-star-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .half-star-slider {
+      width: 105px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .star-Readout {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 68px;
+    }
+
+    /* Keyword Supplement Input */
+    .keyword-box {
+      display: flex;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .keyword-box input {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 0.74rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Dual Playback Action Buttons */
+    .play-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 6px;
+    }
+
+    /* Modal / Drawer for AI MCP & Root CLI DB */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .code-area {
+      width: 100%;
+      min-height: 195px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.79rem;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      resize: vertical;
+    }
+
+    /* Mobile Bottom Bar (Android Responsive Optimization) */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 8px 10px;
+      justify-content: space-around;
+      z-index: 60;
+    }
+
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .mobile-bottom-nav { display: flex; }
+      .media-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; }
+      .poster-wrap { height: 130px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">CV</div>
+      <div>
+        <div>CineVault Studio</div>
+        <div style="font-size: 0.68rem; color: var(--text-secondary);" id="lbl-subtitle">
+          欧美成人 &bull; 日本AV番号 &bull; 常规院线三轨引擎
+        </div>
+      </div>
+    </div>
+
+    <!-- Tri-Library Partition Switcher -->
+    <div class="library-switcher">
+      <button class="lib-tab active" id="tab-all" onclick="setCategoryMode('all')">
+        &#x1F3AC; 全部 (All)
+      </button>
+      <button class="lib-tab" id="tab-adult" onclick="setCategoryMode('western_adult')">
+        &#x1F525; 欧美成人 (Western)
+      </button>
+      <button class="lib-tab" id="tab-jav" onclick="setCategoryMode('japanese_jav')">
+        &#x1F338; 日本AV (JAV)
+      </button>
+      <button class="lib-tab" id="tab-mainstream" onclick="setCategoryMode('mainstream')">
+        &#x1F37F; 常规院线 (Cinema)
+      </button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="搜索片名、番号(SSIS-001)、厂商、女优、类型或关键词..." oninput="renderLibrary()" />
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-primary" onclick="simulateRefreshScan()" id="btn-refresh">
+        &#x21bb; 刷新并校验哈希
+      </button>
+      <button class="btn" onclick="openModal('ai-modal')" id="btn-ai">
+        &#x2728; AI 补全与新厂牌收录
+      </button>
+      <button class="btn" onclick="openModal('sync-modal')" id="btn-sync">
+        &#x1F4E6; 同步包 (.cvpack)
+      </button>
+      <button class="btn" onclick="openModal('settings-modal')" id="btn-settings">
+        &#x2699; 设置
+      </button>
+      <button class="btn" onclick="toggleSafeCinemaMode()" id="btn-safe" title="一键仅显示常规院线电影并隐藏成人分区">
+        &#x1F6E1; 仅看常规电影
+      </button>
+      <button class="btn" onclick="togglePrivacyBlur()" id="btn-privacy" title="Shortcut: Ctrl+B">
+        &#x1F576; 隐私模糊
+      </button>
+      <button class="btn" onclick="toggleTheme()" id="btn-theme">
+        &#x1F319; 曜石黑
+      </button>
+      <button class="btn" onclick="toggleLanguage()" id="btn-lang">
+        EN / 中文
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="workspace">
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <div class="side-section-title" id="nav-category-title">影库分类 (Categories)</div>
+        <ul class="side-list" id="sidebar-category-list">
+          <li class="side-item active" data-side-cat="all" onclick="selectSidebarCategory(this, 'all')">&#x1F3AC; 全部影片 (All Videos)</li>
+          <li class="side-item" data-side-cat="western_adult" onclick="selectSidebarCategory(this, 'western_adult')">&#x1F525; 欧美成人 (Western)</li>
+          <li class="side-item" data-side-cat="japanese_jav" onclick="selectSidebarCategory(this, 'japanese_jav')">&#x1F338; 日本AV (JAV)</li>
+          <li class="side-item" data-side-cat="mainstream" onclick="selectSidebarCategory(this, 'mainstream')">&#x1F37F; 常规院线 (Cinema)</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="side-section-title" id="nav-playlist-title">智能筛选与播放列表</div>
+        <ul class="side-list" id="sidebar-playlist-list">
+          <li class="side-item active" data-side-pl="all" onclick="selectSidebarPlaylist(this, 'all')">&#x1F4CB; 全部状态 (All)</li>
+          <li class="side-item" data-side-pl="top_rated" onclick="selectSidebarPlaylist(this, 'top_rated')">&#x2B50; 高分精选 (&ge; 4.5★)</li>
+          <li class="side-item" data-side-pl="unknown_studio" style="color:#FBBF24;" onclick="selectSidebarPlaylist(this, 'unknown_studio')">&#x1F195; 未收录新厂牌 (AI 待收录)</li>
+          <li class="side-item" data-side-pl="incomplete" onclick="selectSidebarPlaylist(this, 'incomplete')">&#x26A0; 待补全信息 (Incomplete)</li>
+          <li class="side-item" data-side-pl="moved" onclick="selectSidebarPlaylist(this, 'moved')">&#x1F500; 移动已重定位 (Hash Moved)</li>
+          <li class="side-item" onclick="exportVlcM3u8()">&#x1F4E5; 导出 VLC 播放列表 (.m3u8)</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="side-section-title" id="nav-player-title">默认本地播放器 (Player)</div>
+        <select id="player-select" class="btn" style="width: 100%; justify-content: space-between;">
+          <option value="C:\Program Files\VideoLAN\VLC\vlc.exe">VLC Media Player (vlc.exe)</option>
+          <option value="C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe">PotPlayer Mini 64</option>
+          <option value="/usr/bin/mpv">MPV Media Player</option>
+          <option value="builtin">内置 HTML5 流媒体播放器</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- Center Content -->
+    <main class="main-area">
+      <!-- Multi-Faceted Category Search Bar (Genre / Studio / Performer / Star Rating / Sort) -->
+      <section class="faceted-search-panel">
+        <div class="facet-row">
+          <div class="facet-controls">
+            <span style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">多维组合筛选:</span>
+            <!-- Studio / Maker Dropdown -->
+            <select id="filter-studio" class="facet-select" onchange="setStudioFilter(this.value)">
+              <option value="all">🏢 全部厂商/片商 (All Studios)</option>
+            </select>
+            <!-- Performer / Actress Dropdown -->
+            <select id="filter-performer" class="facet-select" onchange="setPerformerFilter(this.value)">
+              <option value="all">👩 全部女优/演员 (All Performers)</option>
+            </select>
+            <!-- Genre / Tag Dropdown -->
+            <select id="filter-tag" class="facet-select" onchange="setTagFilter(this.value)">
+              <option value="all">🏷 全部类型标签 (All Genre Tags)</option>
+            </select>
+            <!-- Half-Star Rating Filter Dropdown -->
+            <select id="filter-rating" class="facet-select" onchange="setMinRatingFilter(this.value)">
+              <option value="0">⭐ 全部星级 (All Stars 0.0★ - 5.0★)</option>
+              <option value="5.0">⭐⭐⭐⭐⭐ 仅看 5.0★ 满分神作</option>
+              <option value="4.5">⭐⭐⭐⭐½ &ge; 4.5★ 极品推荐</option>
+              <option value="4.0">⭐⭐⭐⭐ &ge; 4.0★ 佳作</option>
+              <option value="3.5">⭐⭐⭐½ &ge; 3.5★ 良好</option>
+              <option value="3.0">⭐⭐⭐ &ge; 3.0★ 及格</option>
+            </select>
+            <button class="btn" onclick="resetAllFilters()" style="padding:5px 10px; font-size:0.76rem;">
+              &#x21ba; 重置筛选
+            </button>
+          </div>
+
+          <div class="hash-summary" id="hash-status-bar">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Quick Studio Chips -->
+        <div class="facet-controls" id="studio-chips"></div>
+      </section>
+
+      <!-- Media Cards Grid -->
+      <section class="media-grid" id="media-grid"></section>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation (Android Optimized) -->
+  <nav class="mobile-bottom-nav">
+    <button class="btn" onclick="setCategoryMode('all')">&#x1F3E0; 全部</button>
+    <button class="btn" onclick="setCategoryMode('western_adult')">&#x1F525; 欧美</button>
+    <button class="btn" onclick="setCategoryMode('japanese_jav')">&#x1F338; 日本AV</button>
+    <button class="btn" onclick="setCategoryMode('mainstream')">&#x1F37F; 院线</button>
+    <button class="btn" onclick="openModal('ai-modal')">&#x2728; AI新厂牌</button>
+  </nav>
+
+  <!-- Modal 1: Dual-Mode AI Enrichment & New Studio Registration -->
+  <div class="modal-backdrop" id="ai-modal">
+    <div class="modal-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="ai-modal-title">&#x2728; AI 元数据与标签校对工作台 (支持 CLI 就地编辑 AI_KEYWORD_DB.md)</h3>
+        <button class="btn" onclick="closeModal('ai-modal')">&#x2715;</button>
+      </div>
+      <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.55;" id="ai-modal-desc">
+        已内置<strong>四条铁律 + 系列必有标签对照表 + 85+ 标准标签词表 + 18+ 年龄合规声明 + 视频时长 (<code>duration_sec</code>) + 用户备注 (<code>user_keywords</code>)</strong>，按<strong>每批 25 条</strong>导出。<br/>
+        &bull; <strong>模式 B（推荐 CLI 就地编辑）</strong>：选择导出模式与批次 &rarr; 点击「💾 写入本批到 AI_KEYWORD_DB.md」 &rarr; 让模型直接改 <code>AI_KEYWORD_DB.md</code> 并保存 &rarr; 点击右下角「📂 从 AI_KEYWORD_DB.md 导入结果」（空 <code>tags: []</code> 绝不覆盖库内已有标签）。
+      </p>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <select id="ai-export-mode" class="facet-select" onchange="setAiExportMode(this.value)">
+            <option value="incomplete">📋 模式一：待补全元数据与标签 (incomplete)</option>
+            <option value="tags_only">🏷 模式二：专项校对标签 (tags_only，含已完成记录，只改 tags)</option>
+          </select>
+          <button class="btn btn-primary" onclick="exportCurrentBatchToDiskMd()">&#x1F4BE; 写入本批到 AI_KEYWORD_DB.md</button>
+          <button class="btn" onclick="copyAiTextarea()">&#x1F4CB; 复制提示词</button>
+          <button class="btn" onclick="clearAiTextareaForPaste()">&#x1F9F9; 清空准备粘贴</button>
+          <button class="btn" onclick="showMcpConfig()">MCP 配置</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button class="btn" id="btn-ai-prev" onclick="changeAiBatch(-1)" style="padding:4px 8px;">&#x25C0; 上一批</button>
+          <span id="ai-batch-info" style="font-size:0.78rem; font-weight:600; color:var(--text-secondary);">第 1 / 1 批</span>
+          <button class="btn" id="btn-ai-next" onclick="changeAiBatch(1)" style="padding:4px 8px;">下一批 &#x25B6;</button>
+        </div>
+      </div>
+      <textarea class="code-area" id="ai-textarea" placeholder="在此处查看 AI_KEYWORD_DB.md 预览，或粘贴大模型返回的 JSON 数组..."></textarea>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:0.8rem; color:var(--text-secondary);" id="copy-feedback"></span>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="importAiFromDisk()" id="btn-ai-disk-import">&#x1F4C2; 从根目录 AI_KEYWORD_DB.md 导入结果 (CLI 推荐)</button>
+          <button class="btn" onclick="simulateAiAutoComplete()" id="btn-ai-apply">&#x26A1; 从文本框粘贴导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Cross-Platform Sync Bundle (.cvpack) & VLC Launch Inspector -->
+  <div class="modal-backdrop" id="sync-modal">
+    <div class="modal-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="sync-modal-title">&#x1F4E6; 跨平台数据包导出与西哈值 (Fast Hash) 校验同步 (.cvpack)</h3>
+        <button class="btn" onclick="closeModal('sync-modal')">&#x2715;</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-secondary);">
+        Windows 端可将整理好的欧美成人、日本AV番号与常规电影库分类、半星评分、新收录厂牌词库与封面打包导出为 <code>.cvpack</code>。安卓端导入时以文件的 <code>cvh1_blake2b_3x64k</code> 复合西哈值为准自动映射手机或 NAS 路径。
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <button class="btn btn-primary" onclick="exportCvpackBundle()">&#x1F4E4; 导出 .cvpack 同步包</button>
+        <input type="text" id="cvpack-import-path" placeholder="输入本地 .cvpack 文件路径进行导入校验..." style="flex:1; min-width:200px; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.82rem;" />
+        <button class="btn" onclick="importCvpackBundle()">&#x1F4E5; 导入并哈希对齐</button>
+      </div>
+      <textarea class="code-area" id="sync-textarea" readonly></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-primary" onclick="closeModal('sync-modal')">确定 (OK)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Settings (Storage Roots, VLC Path & API Keys -> config.json) -->
+  <div class="modal-backdrop" id="settings-modal">
+    <div class="modal-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>&#x2699; 存储目录与播放器 / API 设置 (config.json)</h3>
+        <button class="btn" onclick="closeModal('settings-modal')">&#x2715;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:0.84rem;">
+        <div>
+          <div style="font-weight:700; margin-bottom:6px;">存储目录列表 (本地磁盘 / Samba NAS / 网盘挂载)</div>
+          <div id="settings-roots-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" id="new-root-path" placeholder="例如 D:\Media 或 \\192.168.1.50\MediaVault" style="flex:1; min-width:220px; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);" />
+            <select id="new-root-type" class="facet-select">
+              <option value="local_disk">本地磁盘 (local_disk)</option>
+              <option value="samba_smb">Samba NAS (samba_smb)</option>
+              <option value="cloud_mount">网盘挂载 (cloud_mount)</option>
+            </select>
+            <button class="btn btn-primary" onclick="addStorageRootRow()">+ 添加目录</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-weight:700; display:block; margin-bottom:4px;">自定义 VLC 播放器路径 (vlc_executable)</label>
+          <input type="text" id="cfg-vlc-path" placeholder="C:\Program Files\VideoLAN\VLC\vlc.exe" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:4px;">ThePornDB API Token (欧美成人刮削，可选)</label>
+            <input type="password" id="cfg-tpdb-token" placeholder="留空则先本地收集，可用 AI 补全" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);" />
+            <div style="font-size:0.74rem; color:var(--text-secondary); margin-top:4px;">
+              获取方式：登录 <a href="https://theporndb.net/user/api-tokens" target="_blank" style="color:var(--accent);">theporndb.net/user/api-tokens</a> 免费生成
+            </div>
+          </div>
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:4px;">TMDB API Key (常规电影刮削，可选)</label>
+            <input type="password" id="cfg-tmdb-key" placeholder="留空则先本地收集，可用 AI 补全" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary);" />
+            <div style="font-size:0.74rem; color:var(--text-secondary); margin-top:4px;">
+              获取方式：登录 <a href="https://www.themoviedb.org/settings/api" target="_blank" style="color:var(--accent);">themoviedb.org/settings/api</a> 免费申请
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px; border-radius:8px; background:var(--bg-elevated); display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <span id="ffmpeg-status-badge" style="font-size:0.8rem; font-weight:600;">FFmpeg 检测中...</span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn" id="btn-install-ffmpeg" onclick="installFfmpeg()" style="display:none;">&#x2B07; 一键安装 FFmpeg</button>
+              <button class="btn" onclick="extractMissingCovers()">&#x1F39E; 为无封面影片截帧 (最后兜底)</button>
+            </div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--text-secondary); cursor:pointer;">
+            <input type="checkbox" id="cfg-auto-ffmpeg" />
+            刷新时自动对无封面影片执行 FFmpeg 截帧（默认关闭，建议先收集/联网/AI 补全后再按需截帧）
+          </label>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+        <span id="settings-status" style="font-size:0.8rem; color:var(--text-secondary);"></span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="closeModal('settings-modal')">关闭</button>
+          <button class="btn btn-primary" onclick="saveSettingsConfig()">&#x1F4BE; 保存配置到 config.json</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Persistent Refresh & Hash Verification Progress Modal -->
+  <div class="modal-backdrop" id="refresh-modal">
+    <div class="modal-panel" style="width:min(540px, 92vw);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>&#x21bb; 影库扫描与哈希校对进度</h3>
+        <button class="btn" id="btn-refresh-close" onclick="closeModal('refresh-modal')" disabled>&#x2715;</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div id="refresh-phase-text" style="font-size:0.9rem; font-weight:600;">准备就绪...</div>
+        <div style="width:100%; height:10px; background:var(--bg-elevated); border-radius:999px; overflow:hidden;">
+          <div id="refresh-progress-bar" style="width:0%; height:100%; background:var(--accent); transition:width 0.2s ease;"></div>
+        </div>
+        <div id="refresh-detail-text" style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6;"></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="btn-refresh-extract" onclick="extractMissingFromRefreshModal()" style="display:none;">&#x1F39E; 为无封面影片截帧 (可选兜底)</button>
+        <button class="btn btn-primary" id="btn-refresh-done" onclick="closeModal('refresh-modal')" disabled>任务完成后关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Built-in HTML5 Range Streaming Player -->
+  <div class="modal-backdrop" id="player-modal">
+    <div class="modal-panel" style="width:min(860px, 96vw);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="player-modal-title">&#x1F3AC; 内置流媒体播放器</h3>
+        <button class="btn" onclick="closeBuiltinPlayer()">&#x2715;</button>
+      </div>
+      <video id="builtin-video" controls autoplay style="width:100%; max-height:70vh; border-radius:10px; background:#000;"></video>
+      <div id="player-modal-meta" style="font-size:0.78rem; color:var(--text-secondary);"></div>
+    </div>
+  </div>
+
+  <script>
+    const IS_LOCAL_SERVER = window.location.protocol.startsWith("http");
+    let currentLang = "zh";
+    let currentTheme = "obsidian";
+    let activeCategoryMode = "all"; // 'all', 'western_adult', 'japanese_jav', 'mainstream'
+    let activeSourceFilter = "all";
+    let activeStudioFilter = "all";
+    let activePerformerFilter = "all";
+    let activeTagFilter = "all";
+    let activeMinRating = 0.0;
+    let activePlaylistFilter = "all";
+    let safeCinemaOnly = false;
+    let ffmpegAvailable = false;
+    let ffmpegPath = "";
+    let appConfig = {
+      storage_roots: [],
+      vlc_executable: "",
+      theporndb_token: "",
+      tmdb_api_key: "",
+      auto_extract_frames: false
+    };
+
+    let MEDIA_ITEMS = [
+      // --- 1. Western Adult Items ---
+      {
+        item_id: "cv_9f82a10c4b11e801",
+        media_category: "western_adult",
+        jav_code: "",
+        file_path: "D:\\Media\\Western\\Vixen\\2025\\Vixen.25.02.14.Eve.Sweet.Sunset.Villa.2160p.mp4",
+        file_name: "Vixen.25.02.14.Eve.Sweet.Sunset.Villa.2160p.mp4",
+        parent_dirs: ["Media", "Western", "Vixen", "2025"],
+        source_type: "local_disk",
+        fast_hash: "cvh1_00012a05f200_8f91c2a4d50b11e2a3901f2c8b44910a",
+        studio: "Vixen",
+        is_unknown_studio: false,
+        director: "Julia Grandi",
+        title: "Sunset Villa",
+        performers: ["Eve Sweet", "Alberto Blanco"],
+        release_date: "2025-02-14",
+        resolution: "4K",
+        tags: ["Glamour", "4K Ultra HD", "Outdoor"],
+        user_keywords: ["Mediterranean", "Vixen 2025"],
+        rating: 4.5,
+        cover_source: "online_poster",
+        cover_gradient: "linear-gradient(135deg, #1e1b4b 0%, #7c2d12 100%)",
+        diff_status: "unchanged",
+        is_incomplete: false,
+        last_played_pos_sec: 420
+      },
+      {
+        item_id: "cv_3d41b89012ac7702",
+        media_category: "western_adult",
+        jav_code: "",
+        file_path: "\\\\192.168.1.50\\MediaVault\\Blacked\\2024\\[Blacked] (2024-11-08) Violet Myers - Midnight Heat [4K].mkv",
+        file_name: "[Blacked] (2024-11-08) Violet Myers - Midnight Heat [4K].mkv",
+        parent_dirs: ["MediaVault", "Blacked", "2024"],
+        source_type: "samba_smb",
+        fast_hash: "cvh1_00018f40c000_2c8b1904a77e12d3f9012a4c8812e301",
+        studio: "Blacked",
+        is_unknown_studio: false,
+        director: "Laurent Sky",
+        title: "Midnight Heat",
+        performers: ["Violet Myers"],
+        release_date: "2024-11-08",
+        resolution: "4K",
+        tags: ["4K Ultra HD", "Lingerie", "Interracial"],
+        user_keywords: [],
+        rating: 5.0,
+        cover_source: "online_poster",
+        cover_gradient: "linear-gradient(135deg, #0f172a 0%, #4c1d95 100%)",
+        diff_status: "moved_or_renamed",
+        previous_path: "\\\\192.168.1.50\\Downloads\\Midnight.Heat.4K.mkv",
+        is_incomplete: false,
+        last_played_pos_sec: 890
+      },
+      // --- Unrecorded New Western Studio Item (Triggers AI New Studio Registration) ---
+      {
+        item_id: "cv_6e55d0198a33b410",
+        media_category: "western_adult",
+        jav_code: "",
+        file_path: "D:\\Media\\Western\\NewBoutique\\[LuxureAesthetics] (2025-01-18) Agatha Vega - Velvet Chateau [4K].mp4",
+        file_name: "[LuxureAesthetics] (2025-01-18) Agatha Vega - Velvet Chateau [4K].mp4",
+        parent_dirs: ["Media", "Western", "NewBoutique"],
+        source_type: "local_disk",
+        fast_hash: "cvh1_0000ef108000_9b44a812c00e5f617283910a44b2c911",
+        studio: "LuxureAesthetics (未收录新厂牌)",
+        is_unknown_studio: true,
+        director: "",
+        title: "Velvet Chateau",
+        performers: ["Agatha Vega"],
+        release_date: "2025-01-18",
+        resolution: "4K",
+        tags: ["4K Ultra HD", "Glamour", "European"],
+        user_keywords: ["欧洲新兴独立厂牌", "Agatha Vega"],
+        rating: 4.0,
+        cover_source: "video_frame",
+        cover_gradient: "linear-gradient(135deg, #451a03 0%, #9a3412 100%)",
+        diff_status: "added",
+        is_incomplete: true,
+        last_played_pos_sec: 120
+      },
+      // --- 2. Japanese JAV Items ---
+      {
+        item_id: "cv_jav_ssis001",
+        media_category: "japanese_jav",
+        jav_code: "SSIS-001",
+        file_path: "\\\\192.168.1.50\\JAV\\S1\\SSIS-001-C 河北彩花 最高峰アイドル 4K.mp4",
+        file_name: "SSIS-001-C 河北彩花 最高峰アイドル 4K.mp4",
+        parent_dirs: ["JAV", "S1"],
+        source_type: "samba_smb",
+        fast_hash: "cvh1_00014a800000_6d21f09a8812c3049182736455aabbcc",
+        studio: "S1 NO.1 STYLE",
+        is_unknown_studio: false,
+        director: "紋℃",
+        title: "最高峰アイドル 4K 特別編",
+        performers: ["河北彩花"],
+        release_date: "2024-05-19",
+        resolution: "4K",
+        tags: ["中文字幕", "4K Ultra HD", "单体作品"],
+        user_keywords: ["S1专属", "SSIS-001"],
+        rating: 5.0,
+        cover_source: "online_poster",
+        cover_gradient: "linear-gradient(135deg, #500724 0%, #be185d 100%)",
+        diff_status: "unchanged",
+        is_incomplete: false,
+        last_played_pos_sec: 600
+      },
+      {
+        item_id: "cv_jav_ipzz102",
+        media_category: "japanese_jav",
+        jav_code: "IPZZ-102",
+        file_path: "R:\\RcloneCloud\\JAV\\IdeaPocket\\[IPZZ-102] 桃乃木香奈 - 週末限定 二人きりの温泉旅行 [中文字幕].mkv",
+        file_name: "[IPZZ-102] 桃乃木香奈 - 週末限定 二人きりの温泉旅行 [中文字幕].mkv",
+        parent_dirs: ["RcloneCloud", "JAV", "IdeaPocket"],
+        source_type: "cloud_mount",
+        fast_hash: "cvh1_0000fa200000_1a2b3c4d5e6f77889900aabbccddeeff",
+        studio: "IdeaPocket",
+        is_unknown_studio: false,
+        director: "",
+        title: "週末限定 二人きりの温泉旅行",
+        performers: ["桃乃木香奈"],
+        release_date: "2024-08-13",
+        resolution: "1080p",
+        tags: ["中文字幕", "1080p", "专属女优"],
+        user_keywords: ["温泉", "IP社"],
+        rating: 4.5,
+        cover_source: "online_poster",
+        cover_gradient: "linear-gradient(135deg, #3b0764 0%, #9d174d 100%)",
+        diff_status: "unchanged",
+        is_incomplete: false,
+        last_played_pos_sec: 0
+      },
+      // --- Unrecorded New Japanese JAV Maker Prefix (Triggers AI New JAV Studio Registration) ---
+      {
+        item_id: "cv_jav_newprefix01",
+        media_category: "japanese_jav",
+        jav_code: "SONE-388",
+        file_path: "D:\\Media\\JAV\\New\\KMHRS-099-C 铃森玲梦 新锐企划中字.mp4",
+        file_name: "KMHRS-099-C 铃森玲梦 新锐企划中字.mp4",
+        parent_dirs: ["Media", "JAV", "New"],
+        source_type: "local_disk",
+        fast_hash: "cvh1_0000bc100000_778899aabbccddeeff00112233445566",
+        jav_code: "KMHRS-099",
+        studio: "待AI识别日系厂牌 (KMHRS)",
+        is_unknown_studio: true,
+        director: "",
+        title: "新锐企划中字",
+        performers: ["铃森玲梦"],
+        release_date: "2025-01-22",
+        resolution: "1080p",
+        tags: ["中文字幕", "1080p"],
+        user_keywords: ["SOD旗下新厂牌 KMHRS", "铃森玲梦"],
+        rating: 4.0,
+        cover_source: "video_frame",
+        cover_gradient: "linear-gradient(135deg, #4a044e 0%, #831843 100%)",
+        diff_status: "added",
+        is_incomplete: true,
+        last_played_pos_sec: 0
+      },
+      // --- 3. Mainstream Cinema Items ---
+      {
+        item_id: "cv_cinema_dune2_2024",
+        media_category: "mainstream_movie",
+        jav_code: "",
+        file_path: "\\\\192.168.1.50\\Cinema\\SciFi\\Dune.Part.Two.2024.2160p.UHD.BluRay.Remux.HEVC.Atmos.mkv",
+        file_name: "Dune.Part.Two.2024.2160p.UHD.BluRay.Remux.HEVC.Atmos.mkv",
+        parent_dirs: ["Cinema", "SciFi"],
+        source_type: "samba_smb",
+        fast_hash: "cvh1_000f8a904000_7c11e820a94012b38471920c11a8f204",
+        studio: "Warner Bros. Pictures",
+        is_unknown_studio: false,
+        director: "Denis Villeneuve",
+        title: "Dune: Part Two",
+        performers: ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"],
+        release_date: "2024-03-01",
+        resolution: "4K",
+        tags: ["Sci-Fi", "IMAX", "BluRay Remux", "Dolby Atmos"],
+        user_keywords: ["TMDB:693134", "IMDb:tt15239678"],
+        rating: 5.0,
+        cover_source: "online_poster",
+        cover_gradient: "linear-gradient(135deg, #0c4a6e 0%, #b45309 100%)",
+        diff_status: "unchanged",
+        is_incomplete: false,
+        last_played_pos_sec: 1840
+      }
+    ];
+
+    function formatStars(rating) {
+      const full = Math.floor(rating);
+      const half = (rating - full) >= 0.5 ? "½" : "";
+      return "★".repeat(full) + half + ` (${rating.toFixed(1)})`;
+    }
+
+    function setCategoryMode(mode) {
+      activeCategoryMode = mode;
+      activeStudioFilter = "all";
+      activePerformerFilter = "all";
+      activeTagFilter = "all";
+      document.getElementById("tab-all").classList.toggle("active", mode === "all");
+      document.getElementById("tab-adult").classList.toggle("active", mode === "western_adult");
+      document.getElementById("tab-jav").classList.toggle("active", mode === "japanese_jav");
+      document.getElementById("tab-mainstream").classList.toggle("active", mode === "mainstream");
+      document.querySelectorAll("#sidebar-category-list .side-item").forEach(el => {
+        el.classList.toggle("active", el.getAttribute("data-side-cat") === mode);
+      });
+      renderLibrary();
+    }
+
+    function selectSidebarCategory(el, mode) {
+      setCategoryMode(mode);
+    }
+
+    function selectSidebarPlaylist(el, pl) {
+      activePlaylistFilter = pl;
+      document.querySelectorAll("#sidebar-playlist-list .side-item").forEach(item => {
+        item.classList.toggle("active", item.getAttribute("data-side-pl") === pl);
+      });
+      renderLibrary();
+    }
+
+    function toggleSafeCinemaMode() {
+      safeCinemaOnly = !safeCinemaOnly;
+      const tabAdult = document.getElementById("tab-adult");
+      const tabJav = document.getElementById("tab-jav");
+      const btn = document.getElementById("btn-safe");
+      if (safeCinemaOnly) {
+        tabAdult.style.display = "none";
+        tabJav.style.display = "none";
+        setCategoryMode("mainstream");
+        btn.textContent = "🔓 显示全部影库";
+      } else {
+        tabAdult.style.display = "inline-block";
+        tabJav.style.display = "inline-block";
+        setCategoryMode("all");
+        btn.textContent = "🛡 仅看常规电影";
+      }
+    }
+
+    function getVisibleItemsByCategory() {
+      return MEDIA_ITEMS.filter(item => {
+        if (safeCinemaOnly && item.media_category !== "mainstream_movie" && item.media_category !== "mainstream_tv") {
+          return false;
+        }
+        if (activeCategoryMode === "western_adult" && item.media_category !== "western_adult") return false;
+        if (activeCategoryMode === "japanese_jav" && item.media_category !== "japanese_jav") return false;
+        if (activeCategoryMode === "mainstream" && item.media_category !== "mainstream_movie" && item.media_category !== "mainstream_tv") return false;
+        return true;
+      });
+    }
+
+    function populateFacetDropdowns(baseItems) {
+      const studios = [...new Set(baseItems.filter(i => !i.is_unknown_studio && i.studio).map(i => i.studio))].sort();
+      const hasUncategorized = baseItems.some(i => i.is_unknown_studio || !i.studio);
+      const performers = [...new Set(baseItems.flatMap(i => i.performers).filter(Boolean))];
+      const tags = [...new Set(baseItems.flatMap(i => i.tags).filter(Boolean))].sort();
+
+      const studioSel = document.getElementById("filter-studio");
+      studioSel.innerHTML = `<option value="all">🏢 全部厂商/片商 (${studios.length})</option>` +
+        (hasUncategorized ? `<option value="__uncategorized__" ${activeStudioFilter === "__uncategorized__" ? "selected" : ""}>🆕 未分类 (待AI分类)</option>` : "") +
+        studios.map(s => `<option value="${s}" ${s === activeStudioFilter ? "selected" : ""}>${s}</option>`).join("");
+
+      const perfSel = document.getElementById("filter-performer");
+      perfSel.innerHTML = `<option value="all">👩 全部女优/演员 (${performers.length})</option>` +
+        performers.map(p => `<option value="${p}" ${p === activePerformerFilter ? "selected" : ""}>${p}</option>`).join("");
+
+      const tagSel = document.getElementById("filter-tag");
+      tagSel.innerHTML = `<option value="all">🏷 全部类型标签 (${tags.length})</option>` +
+        tags.map(t => `<option value="${t}" ${t === activeTagFilter ? "selected" : ""}>#${t}</option>`).join("");
+
+      const chipContainer = document.getElementById("studio-chips");
+      const chipKeys = ["all", ...(hasUncategorized ? ["__uncategorized__"] : []), ...studios];
+      chipContainer.innerHTML = chipKeys.map(st => {
+        const label = st === "all" ? "全部厂牌 (All)" : (st === "__uncategorized__" ? "🆕 未分类 (待AI)" : st);
+        const cls = st === activeStudioFilter ? "chip active" : "chip";
+        return `<button class="${cls}" onclick="setStudioFilter('${st.replace(/'/g, "\\'")}')">${label}</button>`;
+      }).join("");
+    }
+
+    function renderHashSummary(baseItems) {
+      const counts = { unchanged: 0, added: 0, moved_or_renamed: 0, unknown_studio: 0 };
+      baseItems.forEach(i => {
+        counts[i.diff_status] = (counts[i.diff_status] || 0) + 1;
+        if (i.is_unknown_studio) counts.unknown_studio += 1;
+      });
+      const bar = document.getElementById("hash-status-bar");
+      bar.innerHTML = `
+        <span class="hash-pill" style="color:#FBBF24; cursor:pointer;" onclick="filterByPlaylist('unknown_studio')">🆕 待AI收录新厂牌: ${counts.unknown_studio}</span>
+        <span class="hash-pill" style="color:var(--badge-added)">● 新增: ${counts.added}</span>
+        <span class="hash-pill" style="color:var(--badge-moved)">⇄ 移动重定位: ${counts.moved_or_renamed}</span>
+      `;
+    }
+
+    function renderLibrary() {
+      const baseItems = getVisibleItemsByCategory();
+      populateFacetDropdowns(baseItems);
+      renderHashSummary(baseItems);
+      const q = (document.getElementById("search-input").value || "").toLowerCase().trim();
+
+      const filtered = baseItems.filter(item => {
+        if (activeSourceFilter !== "all" && item.source_type !== activeSourceFilter) return false;
+        if (activeStudioFilter === "__uncategorized__") {
+          if (!item.is_unknown_studio && item.studio) return false;
+        } else if (activeStudioFilter !== "all") {
+          if (item.is_unknown_studio || item.studio !== activeStudioFilter) return false;
+        }
+        if (activePerformerFilter !== "all" && !item.performers.includes(activePerformerFilter)) return false;
+        if (activeTagFilter !== "all" && !item.tags.includes(activeTagFilter)) return false;
+        if (item.rating < activeMinRating - 1e-6) return false;
+
+        if (activePlaylistFilter === "top_rated" && item.rating < 4.5) return false;
+        if (activePlaylistFilter === "unknown_studio" && !item.is_unknown_studio) return false;
+        if (activePlaylistFilter === "incomplete" && !item.is_incomplete) return false;
+        if (activePlaylistFilter === "moved" && item.diff_status !== "moved_or_renamed") return false;
+
+        if (q) {
+          const hay = [
+            item.title, item.jav_code || "", item.studio, item.director || "",
+            item.release_date, item.file_name,
+            ...item.performers, ...item.tags, ...item.user_keywords
+          ].join(" ").toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      const grid = document.getElementById("media-grid");
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:48px 20px; background:var(--bg-card); border:1px dashed var(--border); border-radius:14px;">
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">暂无匹配影片</div>
+            <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:14px;">
+              ${IS_LOCAL_SERVER ? "请先在「⚙ 设置」中添加本地磁盘 / Samba NAS / 网盘挂载目录，然后点击「↻ 刷新并校验哈希」。" : "当前筛选条件下没有匹配项。"}
+            </div>
+            ${IS_LOCAL_SERVER ? `<button class="btn btn-primary" onclick="openModal('settings-modal')">&#x2699; 配置存储目录</button>` : ""}
+          </div>
+        `;
+        return;
+      }
+      grid.innerHTML = filtered.map(item => {
+        const isMainstream = item.media_category === "mainstream_movie" || item.media_category === "mainstream_tv";
+        const isJav = item.media_category === "japanese_jav";
+        const coverBadge = item.cover_source === "video_frame"
+          ? "🎞 智能截取视频帧 (18%)"
+          : (isJav ? "🌸 JavDB/FANZA 海报" : (isMainstream ? "🎬 TMDB 海报" : "🖼 ThePornDB/Stash 海报"));
+
+        let catBadge = `<span class="category-badge cat-adult">🔥 欧美成人</span>`;
+        if (isJav) catBadge = `<span class="category-badge cat-jav">🌸 日本AV (${item.jav_code})</span>`;
+        if (isMainstream) catBadge = `<span class="category-badge cat-mainstream">🍿 常规院线</span>`;
+
+        const diffLabel = item.diff_status === "moved_or_renamed"
+          ? "HASH MOVED"
+          : (item.diff_status === "added" ? "NEW ADDED" : "");
+
+        const castChipClass = isJav
+          ? "performer-chip jav-actress"
+          : (isMainstream ? "performer-chip cinema-cast" : "performer-chip");
+
+        const isUncat = item.is_unknown_studio || !item.studio;
+        const studioBadgeClass = isUncat ? "studio-badge unknown-studio" : "studio-badge";
+        const studioLabel = isUncat ? "🆕 未分类 (待AI)" : item.studio;
+        const studioFilterKey = isUncat ? "__uncategorized__" : item.studio;
+        let posterUrl = "";
+        if (item.cover_path) {
+          if (item.cover_path.startsWith("http") || item.cover_path.startsWith("/api/")) {
+            posterUrl = item.cover_path;
+          } else if (IS_LOCAL_SERVER) {
+            posterUrl = `/api/local-cover/${encodeURIComponent(item.item_id)}`;
+          }
+        }
+        const posterBg = posterUrl
+          ? `background-image: url('${posterUrl}'); background-size: cover; background-position: center;`
+          : `background: ${item.cover_gradient || "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"};`;
+
+        return `
+          <article class="media-card">
+            <div class="poster-wrap">
+              <div class="poster-art" style="${posterBg}">
+                <span class="${studioBadgeClass}" onclick="setStudioFilter('${studioFilterKey.replace(/'/g, "\\'")}')" style="cursor:pointer;">
+                  ${studioLabel} &bull; ${item.resolution || "HD"}
+                </span>
+                <span class="cover-source-badge">${coverBadge}</span>
+                ${catBadge}
+                ${diffLabel ? `<span class="diff-badge diff-${item.diff_status}">${diffLabel}</span>` : ""}
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-title-row">
+                <div class="card-title">
+                  ${item.jav_code ? `<span class="jav-code-pill">${item.jav_code}</span>` : ""}${item.title}
+                </div>
+                <div class="card-date">${item.release_date}</div>
+              </div>
+              <div class="performer-row">
+                ${item.director ? `<span class="tag-pill">🎬 ${item.director}</span>` : ""}
+                ${(item.performers.length ? item.performers : ["待补充女优/演员"]).map(p =>
+                  `<span class="${castChipClass}" onclick="setPerformerFilter('${p}')" title="点击按该女优/演员筛选">${p}</span>`
+                ).join("")}
+              </div>
+              <div class="tag-row">
+                ${item.tags.map(tg =>
+                  `<span class="tag-pill" onclick="setTagFilter('${tg}')" title="点击按该类型标签筛选">#${tg}</span>`
+                ).join("")}
+                ${item.user_keywords.map(kw => `<span class="tag-pill" style="border:1px dashed var(--accent)">🔑 ${kw}</span>`).join("")}
+              </div>
+
+              <!-- Half-Star Rating (0.5 step) -->
+              <div class="rating-row">
+                <span class="star-Readout" id="star-lbl-${item.item_id}">${formatStars(item.rating)}</span>
+                <div class="half-star-control">
+                  <input
+                    type="range"
+                    class="half-star-slider"
+                    min="0"
+                    max="5"
+                    step="0.5"
+                    value="${item.rating}"
+                    oninput="updateHalfStar('${item.item_id}', this.value)"
+                  />
+                </div>
+              </div>
+
+              <!-- User Keyword Supplement -->
+              <div class="keyword-box">
+                <input
+                  type="text"
+                  id="kw-input-${item.item_id}"
+                  placeholder="+ 补充关键词/新厂牌提示..."
+                  value="${item.user_keywords.join(', ')}"
+                />
+                <button class="btn" onclick="saveKeywords('${item.item_id}')">保存</button>
+              </div>
+
+              <!-- Play in VLC or Built-in Player -->
+              <div class="play-actions">
+                <button class="btn btn-primary" onclick="launchVlc('${item.item_id}')">▶ VLC 播放</button>
+                <button class="btn" onclick="launchBuiltinPlayer('${item.item_id}')">🎬 内置播放</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function setStudioFilter(st) { activeStudioFilter = st; renderLibrary(); }
+    function setPerformerFilter(pf) { activePerformerFilter = pf; renderLibrary(); }
+    function setTagFilter(tg) { activeTagFilter = tg; renderLibrary(); }
+    function setMinRatingFilter(val) { activeMinRating = parseFloat(val) || 0.0; renderLibrary(); }
+
+    function resetAllFilters() {
+      activeStudioFilter = "all";
+      activePerformerFilter = "all";
+      activeTagFilter = "all";
+      activeMinRating = 0.0;
+      activePlaylistFilter = "all";
+      document.getElementById("search-input").value = "";
+      document.getElementById("filter-rating").value = "0";
+      renderLibrary();
+    }
+
+    async function apiGet(url) {
+      const resp = await fetch(url);
+      return await resp.json();
+    }
+
+    async function apiPost(url, body) {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {})
+      });
+      return await resp.json();
+    }
+
+    async function loadBackendLibrary() {
+      if (!IS_LOCAL_SERVER) return;
+      try {
+        const [libData, cfgData] = await Promise.all([apiGet("/api/library"), apiGet("/api/config")]);
+        if (libData && Array.isArray(libData.items)) {
+          MEDIA_ITEMS = libData.items;
+        }
+        if (libData && Array.isArray(libData.players) && libData.players.length > 0) {
+          const sel = document.getElementById("player-select");
+          sel.innerHTML = libData.players.map(p =>
+            `<option value="${p.executable_path}">${p.name} (${p.executable_path})</option>`
+          ).join("") + `<option value="builtin">内置 HTML5 流媒体播放器</option>`;
+        }
+        if (cfgData && cfgData.config) {
+          appConfig = cfgData.config;
+          ffmpegAvailable = Boolean(cfgData.ffmpeg_available);
+          ffmpegPath = cfgData.ffmpeg_path || "";
+          if (appConfig.vlc_executable) {
+            const sel = document.getElementById("player-select");
+            if (![...sel.options].some(o => o.value === appConfig.vlc_executable)) {
+              const opt = document.createElement("option");
+              opt.value = appConfig.vlc_executable;
+              opt.textContent = `自定义播放器 (${appConfig.vlc_executable})`;
+              sel.prepend(opt);
+            }
+            sel.value = appConfig.vlc_executable;
+          }
+        }
+        renderLibrary();
+      } catch (err) {
+        console.warn("Backend sync unavailable, using local fallback:", err);
+      }
+    }
+
+    async function updateHalfStar(itemId, val) {
+      const num = parseFloat(val);
+      const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
+      if (!item) return;
+      item.rating = num;
+      item.rating_half_steps = Math.round(num * 2);
+      document.getElementById(`star-lbl-${itemId}`).textContent = formatStars(num);
+      if (IS_LOCAL_SERVER) {
+        await apiPost("/api/rate", { item_id: itemId, rating: num });
+      }
+    }
+
+    async function saveKeywords(itemId) {
+      const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
+      const input = document.getElementById(`kw-input-${itemId}`);
+      if (!item || !input) return;
+      item.user_keywords = input.value.split(",").map(s => s.trim()).filter(Boolean);
+      if (IS_LOCAL_SERVER) {
+        await apiPost("/api/keywords", { item_id: itemId, keywords: item.user_keywords });
+      }
+      renderLibrary();
+    }
+
+    async function launchVlc(itemId) {
+      const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
+      const vlcExe = document.getElementById("player-select").value;
+      if (vlcExe === "builtin") {
+        launchBuiltinPlayer(itemId);
+        return;
+      }
+      if (IS_LOCAL_SERVER) {
+        const res = await apiPost("/api/play/vlc", {
+          item_id: itemId,
+          vlc_executable: vlcExe,
+          launch: true
+        });
+        if (res.launched) {
+          return;
+        }
+        document.getElementById("sync-modal-title").textContent = "⚠ 未能直接拉起本机 VLC，请检查「⚙ 设置」中的 VLC 路径";
+        document.getElementById("sync-textarea").value =
+          `[Launch Error]\n${res.launch_error || "请检查 VLC 路径"}\n\n` +
+          `[Windows / Desktop VLC CLI Command]\n${(res.command || []).join(" ")}\n\n` +
+          `[Android Mobile VLC Deep-Link Intent]\n${res.android_intent_uri || ""}`;
+        openModal("sync-modal");
+        return;
+      }
+      const cmd = `"${vlcExe}" --start-time=${item.last_played_pos_sec} --meta-title="${item.jav_code ? '[' + item.jav_code + '] ' : ''}${item.title}" "${item.file_path}"`;
+      const androidUri = `vlc://file://${encodeURIComponent(item.file_path)}#Intent;package=org.videolan.vlc;end`;
+      document.getElementById("sync-modal-title").textContent = "▶ 本地 VLC 播放器调用指令 & 安卓 Intent 预览";
+      document.getElementById("sync-textarea").value =
+        `[Media Category]\n${item.media_category} ${item.jav_code ? '(' + item.jav_code + ')' : ''}\n\n` +
+        `[Windows / Desktop VLC CLI Command]\n${cmd}\n\n` +
+        `[Android Mobile VLC Deep-Link Intent]\n${androidUri}\n\n` +
+        `[File Fast Hash Verified]\n${item.fast_hash}`;
+      openModal("sync-modal");
+    }
+
+    function launchBuiltinPlayer(itemId) {
+      const item = MEDIA_ITEMS.find(i => i.item_id === itemId);
+      if (!item) return;
+      if (IS_LOCAL_SERVER) {
+        const videoEl = document.getElementById("builtin-video");
+        videoEl.src = `/api/stream/${encodeURIComponent(item.item_id)}`;
+        document.getElementById("player-modal-title").textContent = `🎬 ${item.jav_code ? "[" + item.jav_code + "] " : ""}${item.title || item.file_name}`;
+        document.getElementById("player-modal-meta").textContent =
+          `HTTP 206 Range 流媒体: /api/stream/${item.item_id} | Fast Hash: ${item.fast_hash}`;
+        openModal("player-modal");
+        return;
+      }
+      document.getElementById("sync-modal-title").textContent = "🎬 内置流媒体播放器 (HTTP 206 Partial Content)";
+      document.getElementById("sync-textarea").value =
+        `Streaming URL: http://127.0.0.1:8765/api/stream/${item.item_id}\n` +
+        `Category: ${item.media_category}\n` +
+        `JAV Code: ${item.jav_code || "N/A"}\n` +
+        `Fast Fingerprint: ${item.fast_hash}`;
+      openModal("sync-modal");
+    }
+
+    function closeBuiltinPlayer() {
+      const videoEl = document.getElementById("builtin-video");
+      videoEl.pause();
+      videoEl.removeAttribute("src");
+      videoEl.load();
+      closeModal("player-modal");
+    }
+
+    async function simulateRefreshScan() {
+      const modalEl = document.getElementById("refresh-modal");
+      const phaseEl = document.getElementById("refresh-phase-text");
+      const barEl = document.getElementById("refresh-progress-bar");
+      const detailEl = document.getElementById("refresh-detail-text");
+      const btnDone = document.getElementById("btn-refresh-done");
+      const btnClose = document.getElementById("btn-refresh-close");
+
+      if (IS_LOCAL_SERVER) {
+        const btn = document.getElementById("btn-refresh");
+        const oldText = btn.textContent;
+        btn.textContent = "⏳ 正在校对...";
+        btn.disabled = true;
+        btnDone.disabled = true;
+        btnClose.disabled = true;
+        btnDone.textContent = "校对进行中，请稍候...";
+        phaseEl.textContent = "正在扫描存储目录与增量哈希校验...";
+        barEl.style.width = "12%";
+        detailEl.textContent = "未变动的文件将直接复用缓存指纹，仅对新增/变更项执行解析与封面补全。";
+        modalEl.classList.add("open");
+
+        const pollTimer = setInterval(async () => {
+          try {
+            const st = await apiGet("/api/refresh/status");
+            if (st && st.phase) {
+              phaseEl.textContent = st.message || st.phase;
+              if (st.total > 0) {
+                const pct = Math.min(95, Math.max(15, Math.round((st.processed / st.total) * 100)));
+                barEl.style.width = `${pct}%`;
+                detailEl.textContent = `当前阶段: ${st.phase} | 已处理: ${st.processed} / ${st.total}`;
+              }
+            }
+          } catch (_) {}
+        }, 350);
+
+        try {
+          const res = await apiPost("/api/refresh", {});
+          clearInterval(pollTimer);
+          if (res && Array.isArray(res.items)) {
+            MEDIA_ITEMS = res.items;
+            renderLibrary();
+            const s = res.summary || {};
+            barEl.style.width = "100%";
+            phaseEl.textContent = `✓ 扫描与哈希校对完成（耗时 ${res.elapsed_sec ?? 0}s）`;
+            detailEl.innerHTML =
+              `活跃影片: <strong>${s.active_total || 0}</strong> &nbsp;|&nbsp; ` +
+              `新增: <strong>${s.added || 0}</strong> &nbsp;|&nbsp; ` +
+              `移动重定位: <strong>${s.moved_or_renamed || 0}</strong> &nbsp;|&nbsp; ` +
+              `未变化: <strong>${s.unchanged || 0}</strong> &nbsp;|&nbsp; ` +
+              `离线缺失: <strong>${s.missing || 0}</strong>`;
+            const missingCovers = MEDIA_ITEMS.filter(i => !i.cover_path || i.cover_source === "placeholder").length;
+            const extBtn = document.getElementById("btn-refresh-extract");
+            if (extBtn) extBtn.style.display = missingCovers > 0 ? "inline-flex" : "none";
+          }
+        } catch (err) {
+          clearInterval(pollTimer);
+          phaseEl.textContent = "⚠ 校对过程发生异常";
+          detailEl.textContent = String(err);
+        } finally {
+          btn.textContent = oldText;
+          btn.disabled = false;
+          btnDone.disabled = false;
+          btnClose.disabled = false;
+          btnDone.textContent = "完成并关闭";
+        }
+        return;
+      }
+      renderLibrary();
+      phaseEl.textContent = "✓ 离线演示库校对完成";
+      barEl.style.width = "100%";
+      detailEl.textContent = "当前为 file:// 离线演示模式；运行 scripts/run_dev.py 可启用本地增量扫描与极速哈希校验。";
+      btnDone.disabled = false;
+      btnClose.disabled = false;
+      btnDone.textContent = "完成并关闭";
+      modalEl.classList.add("open");
+    }
+
+    let currentAiBatchIndex = 0;
+    let totalAiBatches = 1;
+    let currentAiExportMode = "incomplete";
+
+    function setAiExportMode(mode) {
+      currentAiExportMode = mode || "incomplete";
+      currentAiBatchIndex = 0;
+      generateInteractivePrompt(0, true);
+    }
+
+    async function generateInteractivePrompt(batchIndex = 0, writeToDisk = false) {
+      currentAiBatchIndex = Math.max(0, batchIndex);
+      if (IS_LOCAL_SERVER) {
+        const res = await apiPost("/api/ai/prompt", {
+          language: currentLang,
+          export_mode: currentAiExportMode,
+          batch_index: currentAiBatchIndex,
+          batch_size: 25,
+          write_to_disk: Boolean(writeToDisk)
+        });
+        if (res && res.prompt) {
+          currentAiBatchIndex = res.batch_index || 0;
+          totalAiBatches = res.total_batches || 1;
+          currentAiExportMode = res.export_mode || currentAiExportMode;
+          const modeSelect = document.getElementById("ai-export-mode");
+          if (modeSelect) modeSelect.value = currentAiExportMode;
+          document.getElementById("ai-textarea").value = res.root_markdown_preview || res.prompt;
+          const infoEl = document.getElementById("ai-batch-info");
+          if (infoEl) {
+            const modeTag = currentAiExportMode === "tags_only" ? "只改tags" : "综合补全";
+            infoEl.textContent = `第 ${currentAiBatchIndex + 1} / ${totalAiBatches} 批（本批 ${res.batch_count || 0} 条 / 共 ${res.total_incomplete || 0} 条 · ${modeTag}）`;
+          }
+          const prevBtn = document.getElementById("btn-ai-prev");
+          const nextBtn = document.getElementById("btn-ai-next");
+          if (prevBtn) prevBtn.disabled = currentAiBatchIndex <= 0;
+          if (nextBtn) nextBtn.disabled = currentAiBatchIndex >= totalAiBatches - 1;
+          const fb = document.getElementById("copy-feedback");
+          fb.style.color = "var(--text-secondary)";
+          fb.textContent = res.written_to_disk
+            ? `✓ 已将第 ${currentAiBatchIndex + 1} 批（${res.batch_count || 0} 条）写入根目录 AI_KEYWORD_DB.md，可直接用 CLI 模型就地编辑！`
+            : `✓ 正在预览第 ${currentAiBatchIndex + 1} 批（点击「💾 写入本批到 AI_KEYWORD_DB.md」可更新磁盘文件）`;
+          return;
+        }
+      }
+      const incomplete = MEDIA_ITEMS.filter(i => i.is_incomplete || i.is_unknown_studio || i.user_keywords.length > 0);
+      const batchSize = 25;
+      totalAiBatches = Math.max(1, Math.ceil(incomplete.length / batchSize));
+      if (currentAiBatchIndex >= totalAiBatches) currentAiBatchIndex = totalAiBatches - 1;
+      const batchItems = incomplete.slice(currentAiBatchIndex * batchSize, (currentAiBatchIndex + 1) * batchSize);
+      const infoEl = document.getElementById("ai-batch-info");
+      if (infoEl) {
+        infoEl.textContent = `第 ${currentAiBatchIndex + 1} / ${totalAiBatches} 批（本批 ${batchItems.length} 条，共 ${incomplete.length} 条）`;
+      }
+      document.getElementById("ai-textarea").value = JSON.stringify(batchItems, null, 2);
+    }
+
+    async function exportCurrentBatchToDiskMd() {
+      await generateInteractivePrompt(currentAiBatchIndex, true);
+    }
+
+    function changeAiBatch(delta) {
+      const nextIdx = currentAiBatchIndex + delta;
+      if (nextIdx < 0 || nextIdx >= totalAiBatches) return;
+      generateInteractivePrompt(nextIdx, true);
+    }
+
+    function clearAiTextareaForPaste() {
+      const el = document.getElementById("ai-textarea");
+      el.value = "";
+      el.focus();
+      document.getElementById("copy-feedback").textContent = "已清空文本框，请直接粘贴 (Ctrl+V) AI 回复的 JSON 内容，再点击「⚡ 从文本框粘贴导入」！";
+    }
+
+    async function importAiFromDisk() {
+      if (!IS_LOCAL_SERVER) return;
+      const res = await apiPost("/api/ai/import", {
+        content: "",
+        prefer_disk: true,
+        export_mode: currentAiExportMode
+      });
+      await loadBackendLibrary();
+      const cnt = res.updated_count || 0;
+      const fb = document.getElementById("copy-feedback");
+      if (cnt > 0) {
+        fb.style.color = "var(--badge-added)";
+        fb.textContent = `✓ 已从根目录 AI_KEYWORD_DB.md 成功导入并合并 ${cnt} 条记录（空 tags 未覆盖已有标签）！`;
+      } else {
+        fb.style.color = "#FBBF24";
+        fb.textContent = "⚠ 未在 AI_KEYWORD_DB.md 中检测到可导入的记录，请确认文件已保存。";
+      }
+    }
+
+    function generateRootMdPreview() {
+      generateInteractivePrompt(currentAiBatchIndex, false);
+    }
+
+    function showMcpConfig() {
+      const mcp = {
+        mcpServers: {
+          "cinevault-studio": {
+            command: "python3",
+            args: ["-m", "src.adapters.mcp_stdio_server"],
+            tools: [
+              "list_incomplete_media",
+              "get_keyword_glossary",
+              "apply_enriched_metadata",
+              "register_new_studio"
+            ]
+          }
+        }
+      };
+      document.getElementById("ai-textarea").value = JSON.stringify(mcp, null, 2);
+    }
+
+    function copyAiTextarea() {
+      const el = document.getElementById("ai-textarea");
+      el.select();
+      navigator.clipboard?.writeText(el.value);
+      document.getElementById("copy-feedback").textContent = "✓ 已复制到剪贴板，可直接粘贴至大模型对话框！";
+    }
+
+    async function simulateAiAutoComplete() {
+      if (IS_LOCAL_SERVER) {
+        const content = document.getElementById("ai-textarea").value;
+        const res = await apiPost("/api/ai/import", {
+          content,
+          prefer_disk: false,
+          export_mode: currentAiExportMode
+        });
+        await loadBackendLibrary();
+        const cnt = res.updated_count || 0;
+        const fb = document.getElementById("copy-feedback");
+        if (cnt > 0) {
+          fb.style.color = "var(--badge-added)";
+          fb.textContent = `✓ 已成功导入 AI 补全结果，共更新 ${cnt} 条记录（空 tags 未覆盖已有标签）！`;
+        } else {
+          fb.style.color = "#FBBF24";
+          fb.textContent = "⚠ 未检测到新的 AI 回复 JSON：可点击「📂 从根目录 AI_KEYWORD_DB.md 导入结果」，或将 AI 输出粘贴到文本框后重试。";
+        }
+        return;
+      }
+      const euroItem = MEDIA_ITEMS.find(i => i.item_id === "cv_6e55d0198a33b410");
+      if (euroItem) {
+        euroItem.studio = "Luxure Aesthetics";
+        euroItem.is_unknown_studio = false;
+        euroItem.is_incomplete = false;
+      }
+      const javItem = MEDIA_ITEMS.find(i => i.item_id === "cv_jav_newprefix01");
+      if (javItem) {
+        javItem.studio = "SOD KMHRS (キミホレ)";
+        javItem.title = "キミだけに惚れた 新鋭専属デビュー";
+        javItem.is_unknown_studio = false;
+        javItem.is_incomplete = false;
+      }
+      closeModal("ai-modal");
+      renderLibrary();
+      alert("✓ AI 已完成补全，并已将新欧美厂牌「Luxure Aesthetics」与日本AV新番号前缀「KMHRS -> SOD KMHRS (キミホレ)」永久收录进系统词库！");
+    }
+
+    function exportVlcM3u8() {
+      const lines = ["#EXTM3U", "#PLAYLIST:CineVault Studio Curated Playlist"];
+      getVisibleItemsByCategory().forEach(i => {
+        const codeTag = i.jav_code ? `[${i.jav_code}] ` : "";
+        lines.push(`#EXTINF:-1,[${i.studio}] ${codeTag}${i.performers.join(", ")} - ${i.title} (${i.rating.toFixed(1)}★)`);
+        lines.push(i.file_path);
+      });
+      document.getElementById("sync-modal-title").textContent = "📥 VLC 播放列表导出预览 (playlist.m3u8)";
+      document.getElementById("sync-textarea").value = lines.join("\n");
+      openModal("sync-modal");
+    }
+
+    async function exportCvpackBundle() {
+      if (!IS_LOCAL_SERVER) {
+        alert("离线预览模式不支持真实导出，请运行 scripts/run_dev.py 启动本地服务。");
+        return;
+      }
+      const res = await apiPost("/api/sync/export", { include_covers: true });
+      document.getElementById("sync-textarea").value = JSON.stringify(res, null, 2);
+      if (res.path) {
+        document.getElementById("cvpack-import-path").value = res.path;
+      }
+    }
+
+    async function importCvpackBundle() {
+      if (!IS_LOCAL_SERVER) {
+        alert("离线预览模式不支持真实导入，请运行 scripts/run_dev.py 启动本地服务。");
+        return;
+      }
+      const cvpackPath = document.getElementById("cvpack-import-path").value.trim();
+      if (!cvpackPath) {
+        alert("请输入 .cvpack 文件路径");
+        return;
+      }
+      const res = await apiPost("/api/sync/import", { cvpack_path: cvpackPath });
+      document.getElementById("sync-textarea").value = JSON.stringify(res, null, 2);
+      if (res.status === "ok") {
+        await loadBackendLibrary();
+      }
+    }
+
+    function renderSettingsRoots() {
+      const list = document.getElementById("settings-roots-list");
+      const roots = appConfig.storage_roots || [];
+      if (roots.length === 0) {
+        list.innerHTML = `<div style="color:var(--text-secondary); font-style:italic;">尚未配置存储目录</div>`;
+        return;
+      }
+      list.innerHTML = roots.map((r, idx) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--bg-elevated); border-radius:8px; gap:8px;">
+          <span><strong>[${r.source_type}]</strong> <code>${r.path}</code></span>
+          <button class="btn" style="padding:3px 8px; font-size:0.75rem;" onclick="removeStorageRootRow(${idx})">删除</button>
+        </div>
+      `).join("");
+    }
+
+    async function addStorageRootRow() {
+      const pathEl = document.getElementById("new-root-path");
+      const typeEl = document.getElementById("new-root-type");
+      const p = pathEl.value.trim();
+      if (!p) return;
+      appConfig.storage_roots = appConfig.storage_roots || [];
+      appConfig.storage_roots.push({ path: p, source_type: typeEl.value });
+      pathEl.value = "";
+      renderSettingsRoots();
+      if (IS_LOCAL_SERVER) {
+        const res = await apiPost("/api/config", appConfig);
+        if (res && res.config) appConfig = res.config;
+        document.getElementById("settings-status").textContent = "✓ 目录已添加并立即保存生效";
+      }
+    }
+
+    async function removeStorageRootRow(idx) {
+      appConfig.storage_roots.splice(idx, 1);
+      renderSettingsRoots();
+      if (IS_LOCAL_SERVER) {
+        const res = await apiPost("/api/config", appConfig);
+        if (res && res.config) appConfig = res.config;
+        document.getElementById("settings-status").textContent = "✓ 目录已删除并立即保存生效";
+      }
+    }
+
+    async function saveSettingsConfig() {
+      appConfig.vlc_executable = document.getElementById("cfg-vlc-path").value.trim();
+      appConfig.theporndb_token = document.getElementById("cfg-tpdb-token").value.trim();
+      appConfig.tmdb_api_key = document.getElementById("cfg-tmdb-key").value.trim();
+      appConfig.auto_extract_frames = Boolean(document.getElementById("cfg-auto-ffmpeg").checked);
+      if (IS_LOCAL_SERVER) {
+        const res = await apiPost("/api/config", appConfig);
+        if (res && res.config) {
+          appConfig = res.config;
+        }
+        document.getElementById("settings-status").textContent = "✓ 已保存到 config.json（可继续修改或点击「关闭」）";
+        await loadBackendLibrary();
+      } else {
+        document.getElementById("settings-status").textContent = "✓ 仅当前会话生效（离线模式）";
+      }
+    }
+
+    function updateFfmpegStatusUi() {
+      const badge = document.getElementById("ffmpeg-status-badge");
+      const btnInstall = document.getElementById("btn-install-ffmpeg");
+      if (!badge || !btnInstall) return;
+      if (ffmpegAvailable) {
+        badge.textContent = `✓ 已检测到 FFmpeg (${ffmpegPath})`;
+        badge.style.color = "var(--badge-added)";
+        btnInstall.style.display = "none";
+      } else {
+        badge.textContent = "⚠ 未检测到 FFmpeg（不影响建库与播放，仅跳过截帧封面）";
+        badge.style.color = "#FBBF24";
+        btnInstall.style.display = "inline-flex";
+      }
+    }
+
+    async function installFfmpeg() {
+      if (!IS_LOCAL_SERVER) return;
+      const res = await apiPost("/api/system/install-ffmpeg", {});
+      document.getElementById("settings-status").textContent = res.message || "已触发安装引导";
+      if (res.download_url) {
+        window.open(res.download_url, "_blank");
+      }
+    }
+
+    async function extractMissingFromRefreshModal() {
+      const phaseEl = document.getElementById("refresh-phase-text");
+      const detailEl = document.getElementById("refresh-detail-text");
+      const extBtn = document.getElementById("btn-refresh-extract");
+      if (extBtn) extBtn.disabled = true;
+      phaseEl.textContent = "⏳ 正在后台静默截取缺失封面（FFmpeg）...";
+      const res = await apiPost("/api/covers/extract-missing", {});
+      if (res.status === "ok") {
+        if (Array.isArray(res.items)) {
+          MEDIA_ITEMS = res.items;
+          renderLibrary();
+        }
+        phaseEl.textContent = `✓ 截帧完成：成功补充 ${res.extracted_count || 0} / ${res.total_missing || 0} 部封面`;
+        if (extBtn) extBtn.style.display = "none";
+      } else {
+        phaseEl.textContent = "⚠ 无法执行截帧";
+        detailEl.textContent = res.message || "未检测到 FFmpeg，可在「⚙ 设置」中一键安装。";
+      }
+      if (extBtn) extBtn.disabled = false;
+    }
+
+    async function extractMissingCovers() {
+      if (!IS_LOCAL_SERVER) return;
+      const statusEl = document.getElementById("settings-status");
+      if (statusEl) statusEl.textContent = "⏳ 正在后台静默截取缺失封面...";
+      const res = await apiPost("/api/covers/extract-missing", {});
+      if (res.status === "ok") {
+        if (Array.isArray(res.items)) {
+          MEDIA_ITEMS = res.items;
+          renderLibrary();
+        }
+        if (statusEl) statusEl.textContent = `✓ 截帧完成：成功补充 ${res.extracted_count || 0} / ${res.total_missing || 0} 部封面`;
+      } else {
+        if (statusEl) statusEl.textContent = `⚠ ${res.message || "截帧失败"}`;
+      }
+    }
+
+    function openModal(id) {
+      if (id === "ai-modal") generateInteractivePrompt();
+      if (id === "settings-modal") {
+        renderSettingsRoots();
+        document.getElementById("cfg-vlc-path").value = appConfig.vlc_executable || "";
+        document.getElementById("cfg-tpdb-token").value = appConfig.theporndb_token || "";
+        document.getElementById("cfg-tmdb-key").value = appConfig.tmdb_api_key || "";
+        document.getElementById("cfg-auto-ffmpeg").checked = Boolean(appConfig.auto_extract_frames);
+        document.getElementById("settings-status").textContent = "";
+        updateFfmpegStatusUi();
+      }
+      if (id === "sync-modal" && !document.getElementById("sync-textarea").value) {
+        document.getElementById("sync-textarea").value = JSON.stringify({
+          format: "cinevault-sync-pack (.cvpack)",
+          schema_version: "1.2.0",
+          hash_algorithm: "cvh1_blake2b_3x64k",
+          total_items: MEDIA_ITEMS.length
+        }, null, 2);
+      }
+      document.getElementById(id).classList.add("open");
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+    function filterBySource(src) { activeSourceFilter = src; renderLibrary(); }
+    function filterByPlaylist(pl) { activePlaylistFilter = pl; renderLibrary(); }
+    function togglePrivacyBlur() { document.body.classList.toggle("privacy-blur"); }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === "obsidian" ? "nordic" : "obsidian";
+      document.documentElement.setAttribute("data-theme", currentTheme);
+      document.getElementById("btn-theme").textContent = currentTheme === "obsidian" ? "🌙 曜石黑" : "☀️ 暖白画廊";
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === "zh" ? "en" : "zh";
+      renderLibrary();
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        togglePrivacyBlur();
+      }
+    });
+
+    renderLibrary();
+    loadBackendLibrary();
+  </script>
+</body>
+</html>

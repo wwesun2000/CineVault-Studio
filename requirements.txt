@@ -1,0 +1,5 @@
+# Core runtime uses Python 3.10+ standard library only (zero mandatory dependencies).
+# Optional packages for local Hydrogen packaging & native desktop/SMB enhancements:
+pyinstaller>=6.0.0
+pywebview>=5.0.0
+smbprotocol>=1.12.0

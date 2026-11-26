@@ -1,0 +1,104 @@
+name: CI & Windows Release Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional tag name to publish a GitHub Release (e.g. v1.0.0)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unittest suite
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+  build-windows:
+    name: Build Windows Portable Release
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Run unittest suite on Windows
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Build CineVaultStudio.exe via PyInstaller
+        shell: cmd
+        run: scripts\build_windows_exe.bat
+
+      - name: Assemble portable folder and run --self-check
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist\CineVaultStudio_Portable" | Out-Null
+          Copy-Item -Path "dist\CineVaultStudio.exe" -Destination "dist\CineVaultStudio_Portable\CineVaultStudio.exe" -Force
+          Copy-Item -Path "AI_ENRICHMENT_GUIDE.md" -Destination "dist\CineVaultStudio_Portable\AI_ENRICHMENT_GUIDE.md" -Force
+          Copy-Item -Path "LICENSE" -Destination "dist\CineVaultStudio_Portable\LICENSE" -Force
+          $p = Start-Process -FilePath "dist\CineVaultStudio_Portable\CineVaultStudio.exe" -ArgumentList "--self-check" -Wait -PassThru
+          if ($p.ExitCode -ne 0) {
+            throw "CineVaultStudio.exe --self-check failed with exit code $($p.ExitCode)"
+          }
+          Remove-Item -Path "dist\CineVaultStudio_Portable\*.db","dist\CineVaultStudio_Portable\AI_KEYWORD_DB.md" -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path "dist\CineVaultStudio_Portable\*" -DestinationPath "dist\CineVaultStudio_Portable.zip" -Force
+
+      - name: Upload Windows Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CineVaultStudio-Windows-Portable
+          path: |
+            dist/CineVaultStudio.exe
+            dist/CineVaultStudio_Portable.zip
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_tag }}
+          name: CineVault Studio ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_tag }}
+          generate_release_notes: true
+          body: |
+            ## CineVault Studio (影库枢机) Windows 绿色便携版
+
+            ### 下载与使用说明
+            - **`CineVaultStudio_Portable.zip`**（推荐）：解压到任意文件夹，双击 `CineVaultStudio.exe` 即可使用（含 `AI_ENRICHMENT_GUIDE.md` 指南与开源协议）。
+            - **`CineVaultStudio.exe`**：单文件独立可执行程序。
+
+            ### 核心功能亮点
+            - 三轨本地/NAS 影库管理（欧美成人 / 日本 AV 番号 / 常规院线），O(1) 极速复合哈希移动重定位
+            - 多维线索解析（文件名 + 系列目录 + 女优目录 + 视频时长 `duration_sec`）与系列必有标签自动补全
+            - 双模式 AI 元数据与标签校对（支持 CLI 就地编辑 `AI_KEYWORD_DB.md` 及 `tags_only` 标签专项校对模式，空标签不覆盖已有标签）
+            - 在线封面本地持久化（`.cinevault_covers/`）、一键前台唤起 VLC 播放、跨平台 `.cvpack` 同步包导出与导入
+          files: |
+            dist/CineVaultStudio_Portable.zip
+            dist/CineVaultStudio.exe

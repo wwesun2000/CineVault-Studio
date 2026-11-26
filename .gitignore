@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# CineVault Studio local database, secrets, covers & sync bundles
+*.db
+*.db-journal
+*.db-wal
+config.json
+*.cvpack
+.cinevault_covers/
+AI_KEYWORD_DB.md
+
+# PyInstaller build artifacts & local archives
+dist/
+build/
+*.spec
+*.zip
+
+# Internal agent handoff files
+.antigravity/
+HYDROGEN_TASKS.md
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
